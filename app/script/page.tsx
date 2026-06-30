@@ -493,6 +493,7 @@ const STYLES: { value: ScriptStyle; label: string }[] = [
 
 export default function ScriptPage() {
   const [mode, setMode] = useState<TabMode>("write");
+  const [optioUrl, setOptioUrl] = useState("http://localhost:3003");
 
   // ── Write tab state ──
   const [hook, setHook] = useState("");
@@ -577,6 +578,48 @@ export default function ScriptPage() {
         .catch(() => {});
     }
   }, []);
+
+  // Fetch optio_url from active brand
+  useEffect(() => {
+    const savedBrand = localStorage.getItem("sigint_brand");
+    fetch("/api/brands")
+      .then((r) => r.json())
+      .then((data: { brands?: Array<{ id: string; optio_url?: string }> }) => {
+        const brands = data.brands ?? [];
+        const brand = brands.find((b) => b.id === savedBrand) ?? brands[0];
+        if (brand?.optio_url) setOptioUrl(brand.optio_url);
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── Optio handoff ──
+  function handleOptioHandoff(style: string, durationSeconds: number) {
+    const STYLE_MAP: Record<string, string> = {
+      faceless_avatar: "avatar",
+      faceless_pointing: "avatar",
+      talking_head: "realistic",
+      clips_with_voiceover: "cinematic",
+    };
+    const LIP_SYNC_MAP: Record<string, boolean> = {
+      talking_head: true,
+    };
+    const s = style?.toLowerCase().replace(/\s+/g, "_") ?? "";
+    const optioStyle = STYLE_MAP[s] ?? (s.includes("avatar") || s.includes("faceless") ? "avatar" : "cinematic");
+    const lipSync = LIP_SYNC_MAP[s] ?? false;
+    const snapped = [15, 30, 60, 90, 120].reduce((prev, curr) =>
+      Math.abs(curr - durationSeconds) < Math.abs(prev - durationSeconds) ? curr : prev
+    );
+    const params = new URLSearchParams({
+      style: optioStyle,
+      format: "short-form",
+      duration: String(snapped),
+      voiceover: "true",
+      lipsync: String(lipSync),
+      motion: lipSync ? "dynamic" : "subtle",
+      aspect_ratio: "9:16",
+    });
+    window.open(`${optioUrl}?${params.toString()}`, "_blank");
+  }
 
   // ── Write handler ──
   async function handleWrite() {
@@ -883,6 +926,13 @@ export default function ScriptPage() {
                     <p className="text-sm text-zinc-400 leading-relaxed">{writeScript.director_notes}</p>
                   </div>
                 </div>
+
+                <button
+                  onClick={() => handleOptioHandoff(visualStyle || "faceless_avatar", writeScript.estimated_duration_seconds)}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-violet-700 hover:bg-violet-600 text-white text-sm font-semibold px-4 py-3 rounded-xl transition-colors"
+                >
+                  Optimize production in Optio →
+                </button>
               </div>
             )}
           </>
@@ -975,12 +1025,18 @@ export default function ScriptPage() {
             )}
 
             {rwResult && (
-              <div ref={rwResultsRef} className="pt-2 space-y-2">
+              <div ref={rwResultsRef} className="pt-2 space-y-4">
                 <div className="border-t border-zinc-800" />
                 <StructuredScriptDisplay
                   result={rwResult}
                   onUseHook={(h) => { setHook(h); setMode("write"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 />
+                <button
+                  onClick={() => handleOptioHandoff(rwStyle, rwResult.metadata?.estimated_duration_seconds ?? 15)}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-violet-700 hover:bg-violet-600 text-white text-sm font-semibold px-4 py-3 rounded-xl transition-colors"
+                >
+                  Optimize production in Optio →
+                </button>
               </div>
             )}
           </>
