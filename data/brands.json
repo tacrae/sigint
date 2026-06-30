@@ -1,0 +1,118 @@
+{
+  "brands": [
+    {
+      "id": "nofaceos",
+      "name": "NoFaceOs",
+      "platform": "Instagram",
+      "handle": "@nofaceos",
+      "niche": "Faceless AI content creation for late starters 35+",
+      "voice": "Two layers always present. The Host: masked, dark, minimal, quiet authority, speaks from the destination — earned and still. The Builder: up late, room full of notebooks and drinks, ideas across a dozen Claude chats, cybersecurity background, guitarist, finishing a degree at 30-something with a 4.0, father building this after everything else. The bridge between them is the content. Jim Rohn's early voice — a person telling you what they learned from being broke and behind, not from having arrived.",
+      "audience": "Adults 35-50 who spent their first decades surviving — bills, responsibility, the thousand things that made building feel impossible. Now watching AI reorganize the world, wondering if the window is already closed. They do not need a guru. They need a peer who found a way through and is reporting back without pretending it was easy.",
+      "emotional_core": "The feeling a reel should leave: I am not alone in this. Someone else is in the same place and still moving.",
+      "content_format": "Reels under 20 seconds. One idea. One true thing. One clear CTA. Faceless avatar only. Own voice primary, ElevenLabs secondary. One thought per line. Short declarative sentences. Second person. Calm and certain — not loud, not urgent, not hyped.",
+      "one_line_brief_check": "Before any script is final, answer: What specific true thing does this reel name that the viewer has been carrying alone? If the answer is vague, the reel is not ready.",
+      "specificity_rule": "Specificity is the mechanism of connection. Not 'You feel behind.' Yes: 'You spent twenty years being good at something. Now you are watching a 24-year-old with a phone outpace everything you built. And you do not know if the window is already closed.' Vague inspiration creates passive viewers. Specific truth creates followers.",
+      "voice_rules": [
+        "One thought per line. Short declarative sentences.",
+        "Plain language. If a word has a simpler substitute, use it.",
+        "Second person. Speak to 'you.'",
+        "Calm and certain. Not loud. Not urgent. Not hyped.",
+        "Confessional specificity over philosophical vagueness. Name the real thing.",
+        "Jim Rohn's early voice — learned from being broke and behind, not from having arrived."
+      ],
+      "forbidden_words": ["delve", "leverage", "unlock", "seamless", "game-changer", "grind", "hustle", "passive income", "crush it"],
+      "forbidden_constructs": [
+        "Em dashes",
+        "Bullet points in scripts or captions",
+        "Fake urgency",
+        "Unverified income claims or implied results",
+        "In today's world or any variation",
+        "Anything that sounds like a marketing deck",
+        "Performed confidence the creator does not have"
+      ],
+      "protected_phrases": [
+        "accept the friction",
+        "the time you spend waiting is time you are spending either way",
+        "the engine is not broken. The fuel is missing.",
+        "Nobody is coming for me. Nobody is going to save me."
+      ],
+      "content_triggers": [
+        "The late night reality — content made after midnight, room full of notebooks and drinks. Not performed. Acknowledged.",
+        "The iteration truth — prompts fail, videos come back wrong, credits get spent on mistakes. Show it.",
+        "The scattered ideas problem — ideas across a dozen Claude chats, notebooks, voice memos. Years of accumulated knowledge with no structure to monetize it.",
+        "The pipeline reveal — the research system (scraper, transcription, Claude analysis, manipulation scoring) is genuinely impressive and completely human in its origin.",
+        "The mask as mirror — the mask is a philosophical position, not a costume. 'I don't show my face because this isn't about my face. It never was.'",
+        "The honest number — real data without spin. A real small number explained honestly is more credible than any claimed success.",
+        "The cybersecurity frame — anonymity as a value, signal vs noise, building systems that filter manipulation. COMSEC background is a lens, not a credential."
+      ],
+      "aesthetic": {
+        "colors": "Near-black backgrounds only (#0A0A0F). Cyan neon (#16E0FF) primary accent. Magenta (#FF2D9B) secondary. Deep violet (#7B2FF7) for glow depth only. Off-white body text (#F5F5F7). Never warm tones. Never brown. Never amber. Never anything above 3500K apparent color temperature.",
+        "set": "Matte black wall. NoFaceOs hexagonal neon sign, right wall upper frame, glowing cyan. Pink or magenta neon vertical accent strip, left side. Dark minimal chair — black, angular, low-back, no tufting. Optional: monitor in background showing terminal or data feed. Never: salt lamp, plants, brown leather, warm lighting, ring light, bookshelves, podcast studio props.",
+        "character": "Hexagonal black LED mask displaying NO FACE OS in white pixel text with cyan glow. Dark jacket, dark pants, dark shoes. No warm tones in outfit. No face ever visible.",
+        "lighting": "Single hard key light, above-left, cool white 5600K+, no diffusion. Practical neon fill from signs only. Optional blue or purple rim behind subject.",
+        "feeling": "Late night. Someone working. 2am at a desk with a glowing screen — not a constructed film set. The neon exists because it is there. Not sci-fi for its own sake."
+      },
+      "approved_tools": {
+        "video_generation": ["Kling", "OpenArt"],
+        "image_generation": ["ChatGPT image generator", "OpenArt"],
+        "ai_assistant": ["Claude", "ChatGPT 4o"],
+        "voice": ["ElevenLabs"],
+        "editing": ["CapCut"],
+        "avatar_design": ["Nano Banana Pro"],
+        "publishing": ["Beacons"],
+        "_note": "Only reference these tools in scripts and briefs. Never suggest tools the creator does not use."
+      },
+      "cta_keyword": "NOFACE",
+      "cta_platform": "ManyChat",
+      "hashtag_stack": [
+        "#facelesscreator",
+        "#aicontentcreator",
+        "#latestarter",
+        "#nofaceos",
+        "#sidehustle"
+      ],
+      "optio_url": "http://localhost:3003",
+      "creator_skills": [
+        "Claude daily power user — ideation, briefs, prompts for other LLMs, prompts for AI image/video/art generation",
+        "Vibe coding in Claude Code — builds functional HTML apps and ebooks in chat without traditional coding",
+        "Discovering and applying Claude skills from skill websites to change real workflows",
+        "Credit optimization on a shoestring budget — knowing which AI model to use when, avoiding wasted credits",
+        "CapCut editing — streamlined, clean workflow for reels",
+        "AI avatar pipeline — first avatar design using ChatGPT image generator + Pinterest for outfit/character reference",
+        "ElevenLabs for secondary voices; own voice as primary avatar voice",
+        "Beacons page setup for faceless creators",
+        "Instagram research pipeline — analyzing competitors before every video",
+        "Iteration mindset — why running many small AI experiments beats chasing perfection",
+        "Jim Rohn persona framing — wrapping AI tutorials in motivational, philosophical language",
+        "Personal development lens — framing AI tools as self-improvement and life restarting tools",
+        "Meta-awareness of the faceless AI niche loop — honest about how the teach-to-teach cycle works"
+      ],
+      "honest_struggles": [
+        "AI avatar consistency — Kling and OpenArt frequently produce artifacts or unwanted elements",
+        "Aesthetic fit uncertainty — dark neon/blade runner style may not resonate with 35+ late-starter audience",
+        "Making videos visually captivating beyond just informational"
+      ],
+      "do_not_recommend": [
+        "Fake social proof claims ('40M people asked for this', 'everyone is doing this')",
+        "Income claims not personally verified by the creator",
+        "Trending audio used as a hook with no actual instructional content underneath",
+        "Comment bait with no substance delivered",
+        "Any tactic that requires the creator to fabricate results or expertise they don't have"
+      ]
+    },
+    {
+      "id": "music-brand",
+      "name": "Music Brand (Placeholder)",
+      "platform": "Instagram",
+      "handle": "TBD",
+      "niche": "Music production and songwriting",
+      "voice": "TBD",
+      "audience": "TBD",
+      "content_format": "TBD",
+      "cta_keyword": "TBD",
+      "cta_platform": "TBD",
+      "hashtag_stack": [],
+      "optio_url": "http://localhost:3003"
+    }
+  ]
+}
