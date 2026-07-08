@@ -5,6 +5,7 @@ import { useState } from "react";
 export interface VideoData {
   id: string;
   url: string;
+  handle: string;
   caption: string;
   hook: string;
   cta_used: string;
@@ -12,6 +13,9 @@ export interface VideoData {
   views: string;
   likes: string;
   comments: string;
+  saves: string;
+  shares: string;
+  follower_count: string;
   posting_time: string;
 }
 
@@ -24,6 +28,7 @@ function emptyVideo(): VideoData {
   return {
     id: crypto.randomUUID(),
     url: "",
+    handle: "",
     caption: "",
     hook: "",
     cta_used: "",
@@ -31,6 +36,9 @@ function emptyVideo(): VideoData {
     views: "",
     likes: "",
     comments: "",
+    saves: "",
+    shares: "",
+    follower_count: "",
     posting_time: "",
   };
 }
@@ -95,6 +103,25 @@ export default function VideoEntry({ videos, onChange }: VideoEntryProps) {
                   placeholder="https://www.instagram.com/reel/..."
                   value={v.url}
                   onChange={(e) => update(v.id, "url", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Handle</label>
+                <input
+                  className={fieldClass}
+                  placeholder="@creator"
+                  value={v.handle}
+                  onChange={(e) => update(v.id, "handle", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Followers</label>
+                <input
+                  className={fieldClass}
+                  type="number"
+                  placeholder="e.g. 42000"
+                  value={v.follower_count}
+                  onChange={(e) => update(v.id, "follower_count", e.target.value)}
                 />
               </div>
               <div className="col-span-2">
@@ -162,6 +189,30 @@ export default function VideoEntry({ videos, onChange }: VideoEntryProps) {
                   placeholder="0"
                   value={v.comments}
                   onChange={(e) => update(v.id, "comments", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">
+                  Saves <span className="text-zinc-600 font-normal">(optional)</span>
+                </label>
+                <input
+                  className={fieldClass}
+                  type="number"
+                  placeholder="0"
+                  value={v.saves}
+                  onChange={(e) => update(v.id, "saves", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">
+                  Shares <span className="text-zinc-600 font-normal">(optional)</span>
+                </label>
+                <input
+                  className={fieldClass}
+                  type="number"
+                  placeholder="0"
+                  value={v.shares}
+                  onChange={(e) => update(v.id, "shares", e.target.value)}
                 />
               </div>
               <div>

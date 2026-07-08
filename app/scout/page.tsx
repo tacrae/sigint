@@ -19,6 +19,25 @@ interface Brand {
   optio_url: string;
 }
 
+interface ScoredVideo {
+  url: string;
+  conversion_score: number;
+  why: string;
+  // outlier fields — present when a baseline existed for the account
+  is_outlier?: boolean;
+  outlier_score?: number;
+  signals?: {
+    signal: string;
+    video_value: number;
+    baseline_value: number;
+    deviation_ratio: number;
+    weight: number;
+  }[];
+  baseline_source?: "stored" | "intra_batch";
+  baseline_sample_count?: number;
+  proxy_note?: string | null;
+}
+
 interface AnalysisResult {
   patterns: {
     top_hooks: string[];
@@ -27,11 +46,7 @@ interface AnalysisResult {
     best_posting_times: string[];
     cross_hashtag_winners: string[];
   };
-  videos_scored: {
-    url: string;
-    conversion_score: number;
-    why: string;
-  }[];
+  videos_scored: ScoredVideo[];
   recommended_brief: {
     hook: string;
     visual_style: string;
@@ -159,6 +174,7 @@ export default function ScoutPage() {
       hashtags,
       videos: videos.map((v) => ({
         url: v.url,
+        handle: v.handle || undefined,
         caption: v.caption,
         hook: v.hook,
         cta_used: v.cta_used,
@@ -169,6 +185,9 @@ export default function ScoutPage() {
         views: v.views ? parseInt(v.views) : undefined,
         likes: v.likes ? parseInt(v.likes) : undefined,
         comments: v.comments ? parseInt(v.comments) : undefined,
+        saves: v.saves ? parseInt(v.saves) : undefined,
+        shares: v.shares ? parseInt(v.shares) : undefined,
+        follower_count: v.follower_count ? parseInt(v.follower_count) : undefined,
         posting_time: v.posting_time,
       })),
     };
@@ -295,12 +314,84 @@ export default function ScoutPage() {
               </div>
             </div>
 
+            {/* Outliers */}
+            {analysis.videos_scored.some((v) => v.is_outlier) && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-base font-bold text-zinc-100">Outliers</h2>
+                  <span className="text-xs text-amber-400 border border-amber-700 bg-amber-900/20 rounded px-2 py-0.5">
+                    above account baseline
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {analysis.videos_scored
+                    .filter((v) => v.is_outlier)
+                    .map((v, i) => (
+                      <div key={i} className="bg-zinc-900 border border-amber-800 rounded-lg px-4 py-3 space-y-3">
+                        <div className="flex items-start justify-between gap-4">
+                          <a
+                            href={v.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-indigo-400 hover:text-indigo-300 truncate max-w-xs"
+                          >
+                            {v.url || `Video ${i + 1}`}
+                          </a>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs text-zinc-500">outlier</span>
+                            <span className="text-sm font-mono font-bold text-amber-400">
+                              {v.outlier_score?.toFixed(1)}/10
+                            </span>
+                          </div>
+                        </div>
+                        {/* Outlier signals */}
+                        {v.signals && v.signals.length > 0 && (
+                          <div className="space-y-1.5">
+                            {v.signals.map((sig, j) => (
+                              <div key={j} className="flex items-center gap-2 text-xs">
+                                <span className="text-zinc-500 w-36 shrink-0">
+                                  {sig.signal.replace(/_/g, " ")}
+                                </span>
+                                <span className="text-zinc-300 font-mono">{sig.video_value.toFixed(3)}</span>
+                                <span className="text-zinc-700">vs</span>
+                                <span className="text-zinc-500 font-mono">{sig.baseline_value.toFixed(3)} baseline</span>
+                                <span className="text-amber-400 font-semibold ml-auto">
+                                  {sig.deviation_ratio}×
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-xs text-zinc-600">
+                          <span>baseline: {v.baseline_source?.replace("_", " ")}</span>
+                          {v.baseline_sample_count !== undefined && (
+                            <span>({v.baseline_sample_count} sample{v.baseline_sample_count !== 1 ? "s" : ""})</span>
+                          )}
+                        </div>
+                        {v.proxy_note && (
+                          <p className="text-xs text-yellow-600 italic border-l-2 border-yellow-800 pl-2">
+                            {v.proxy_note}
+                          </p>
+                        )}
+                        <ScoreBar score={v.conversion_score} />
+                        <p className="text-xs text-zinc-400">{v.why}</p>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
             {/* Scored videos */}
             <div className="space-y-4">
-              <h2 className="text-base font-bold text-zinc-100">Conversion Scores</h2>
+              <h2 className="text-base font-bold text-zinc-100">All Videos</h2>
               <div className="space-y-3">
                 {analysis.videos_scored.map((v, i) => (
-                  <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 space-y-2">
+                  <div
+                    key={i}
+                    className={`bg-zinc-900 rounded-lg px-4 py-3 space-y-2 border ${
+                      v.is_outlier ? "border-amber-900" : "border-zinc-800"
+                    }`}
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <a
                         href={v.url}
@@ -310,6 +401,9 @@ export default function ScoutPage() {
                       >
                         {v.url || `Video ${i + 1}`}
                       </a>
+                      {v.is_outlier && (
+                        <span className="text-xs text-amber-500 shrink-0">⚑ outlier</span>
+                      )}
                     </div>
                     <ScoreBar score={v.conversion_score} />
                     <p className="text-xs text-zinc-400">{v.why}</p>

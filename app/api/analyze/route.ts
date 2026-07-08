@@ -5,6 +5,12 @@ import path from "path";
 import { readData, writeData } from "@/lib/data";
 import { estimate_competitor_revenue, rank_competitors } from "@/lib/revenue";
 import {
+  AccountBaseline,
+  computeOutlierScore,
+  getIntraBatchBaseline,
+  updateBaseline,
+} from "@/lib/outlier";
+import {
   HOOK_TYPES,
   PSYCHOLOGICAL_TRIGGERS,
   HOOK_SCORING_RUBRIC,
@@ -25,6 +31,8 @@ interface VideoInput {
   views?: number;
   likes?: number;
   comments?: number;
+  saves?: number;
+  shares?: number;
   posting_time?: string;
   follower_count?: number;
   product_price?: number;
@@ -228,6 +236,47 @@ Return only the JSON object. No prose. No markdown fences.`;
         }))
       );
     }
+
+    // Outlier detection — per-account baseline comparison
+    const storedBaselines = Object.fromEntries(
+      (readData("account_baselines.json") as AccountBaseline[]).map((b) => [b.handle, b])
+    );
+
+    if (Array.isArray(analysisResult.videos_scored)) {
+      analysisResult.videos_scored = (
+        analysisResult.videos_scored as Array<Record<string, unknown>>
+      ).map((scored) => {
+        const input = videoMap.get(scored.url as string);
+        if (!input?.handle) return scored;
+
+        // Option C: prefer stored baseline, fall back to intra-batch leave-one-out
+        const stored = storedBaselines[input.handle] ?? null;
+        const intraBatch = getIntraBatchBaseline(input, videos);
+        const baseline = stored ?? intraBatch;
+        const source: "stored" | "intra_batch" = stored ? "stored" : "intra_batch";
+
+        if (!baseline) return scored;
+
+        const outlier = computeOutlierScore(input, baseline, source);
+        return { ...scored, ...outlier };
+      });
+
+      // Surface outliers first
+      (analysisResult.videos_scored as Array<Record<string, unknown>>).sort(
+        (a, b) => ((b.outlier_score as number) ?? 0) - ((a.outlier_score as number) ?? 0)
+      );
+    }
+
+    // Persist updated baselines for all videos that have a handle
+    for (const v of videos) {
+      if (!v.handle) continue;
+      storedBaselines[v.handle] = updateBaseline(
+        storedBaselines[v.handle] ?? null,
+        v,
+        v.handle
+      );
+    }
+    writeData("account_baselines.json", Object.values(storedBaselines));
 
     const record = {
       id: `analysis_${Date.now()}`,

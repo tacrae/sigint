@@ -31,6 +31,7 @@ export default function URLImport({ onImport }: URLImportProps) {
       const video: VideoData = {
         id: crypto.randomUUID(),
         url: data.url,
+        handle: data.author ? (data.author.startsWith("@") ? data.author : `@${data.author}`) : "",
         caption: data.caption ?? "",
         hook: "",
         cta_used: data.cta_used ?? "",
@@ -38,6 +39,9 @@ export default function URLImport({ onImport }: URLImportProps) {
         views: "",
         likes: "",
         comments: "",
+        saves: "",
+        shares: "",
+        follower_count: "",
         posting_time: "",
       };
 
