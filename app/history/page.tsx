@@ -443,7 +443,49 @@ function AutopsyCard({
   );
 }
 
-type Tab = "scout" | "autopsy";
+interface AggregateHookType {
+  key: string;
+  label: string;
+  count: number;
+  top_performer_count: number;
+  top_performer_pct: number;
+  avg_virality: number;
+  posts: string[];
+}
+
+interface AggregateBeatStructure {
+  key: string;
+  label: string;
+  duration_range: string;
+  count: number;
+  top_performer_count: number;
+  top_performer_pct: number;
+  avg_virality: number;
+}
+
+interface AggregateTopPost {
+  id: string;
+  title: string;
+  handle: string | null;
+  virality_score: number | null;
+  verdict: string | null;
+  hook_type: string | null;
+  beat_structure: string | null;
+  structural_weak_point: string | null;
+  timestamp: string;
+}
+
+interface AggregateData {
+  total_posts: number;
+  top_performer_count: number;
+  top_performer_threshold: number | null;
+  hook_types: AggregateHookType[];
+  beat_structures: AggregateBeatStructure[];
+  top_posts: AggregateTopPost[];
+  message?: string;
+}
+
+type Tab = "scout" | "autopsy" | "aggregate";
 
 export default function HistoryPage() {
   const [tab, setTab] = useState<Tab>("scout");
@@ -452,6 +494,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [importStatus, setImportStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [aggregateData, setAggregateData] = useState<AggregateData | null>(null);
+  const [aggregateLoading, setAggregateLoading] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -468,6 +512,14 @@ export default function HistoryPage() {
   function handleTabChange(newTab: Tab) {
     setTab(newTab);
     setSelectedForCompare([]);
+    if (newTab === "aggregate" && !aggregateData && !aggregateLoading) {
+      setAggregateLoading(true);
+      fetch("/api/autopsy/aggregate")
+        .then((r) => r.json())
+        .then((d: AggregateData) => setAggregateData(d))
+        .catch(() => {})
+        .finally(() => setAggregateLoading(false));
+    }
   }
 
   function toggleCompare(id: string) {
@@ -605,24 +657,33 @@ export default function HistoryPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-zinc-800">
-          {(["scout", "autopsy"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => handleTabChange(t)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                tab === t
-                  ? t === "scout"
-                    ? "border-indigo-500 text-indigo-300"
-                    : "border-red-500 text-red-300"
-                  : "border-transparent text-zinc-600 hover:text-zinc-400"
-              }`}
-            >
-              {t === "scout" ? "Scout Analyses" : "Autopsies"}
-              <span className="ml-2 text-xs opacity-60">
-                {t === "scout" ? analyses.length : autopsies.length}
-              </span>
-            </button>
-          ))}
+          {(["scout", "autopsy", "aggregate"] as Tab[]).map((t) => {
+            const active = tab === t;
+            const activeColor =
+              t === "scout" ? "border-indigo-500 text-indigo-300"
+              : t === "autopsy" ? "border-red-500 text-red-300"
+              : "border-violet-500 text-violet-300";
+            const label =
+              t === "scout" ? "Scout" : t === "autopsy" ? "Autopsies" : "Aggregate";
+            const count =
+              t === "scout" ? analyses.length
+              : t === "autopsy" ? autopsies.length
+              : null;
+            return (
+              <button
+                key={t}
+                onClick={() => handleTabChange(t)}
+                className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                  active ? activeColor : "border-transparent text-zinc-600 hover:text-zinc-400"
+                }`}
+              >
+                {label}
+                {count !== null && (
+                  <span className="ml-2 text-xs opacity-60">{count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content */}
@@ -642,13 +703,12 @@ export default function HistoryPage() {
               ))
             )}
           </div>
-        ) : (
+        ) : tab === "autopsy" ? (
           <div className="space-y-3">
             {autopsies.length === 0 ? (
               <EmptyState label="Autopsies" />
             ) : (
               <>
-                {/* Compare hint */}
                 {autopsies.length >= 2 && selectedForCompare.length < 2 && (
                   <p className="text-xs text-zinc-600">
                     {selectedForCompare.length === 1
@@ -656,8 +716,6 @@ export default function HistoryPage() {
                       : "Select 2 autopsies to compare side by side."}
                   </p>
                 )}
-
-                {/* Comparison panel */}
                 {compareA && compareB && (
                   <ComparisonPanel
                     a={compareA}
@@ -665,7 +723,6 @@ export default function HistoryPage() {
                     onClear={() => setSelectedForCompare([])}
                   />
                 )}
-
                 {autopsies.map((a) => (
                   <AutopsyCard
                     key={a.id}
@@ -682,6 +739,149 @@ export default function HistoryPage() {
               </>
             )}
           </div>
+        ) : (
+          /* Aggregate tab */
+          aggregateLoading ? (
+            <div className="text-center py-16 text-zinc-600 text-sm">Computing…</div>
+          ) : !aggregateData || aggregateData.total_posts === 0 ? (
+            <EmptyState label="autopsy data to aggregate (run at least one autopsy first)" />
+          ) : (
+            <div className="space-y-8">
+              {/* Summary line */}
+              <p className="text-xs text-zinc-500">
+                {aggregateData.total_posts} posts · top {aggregateData.top_performer_count} by virality score
+                {aggregateData.top_performer_threshold !== null && (
+                  <span className="text-zinc-700"> (threshold {aggregateData.top_performer_threshold}/10)</span>
+                )}
+              </p>
+
+              {/* Hook types */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Hook types</h3>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
+                  {aggregateData.hook_types.map((h) => {
+                    const hitPct = h.count > 0 ? h.top_performer_count / h.count : 0;
+                    const barColor =
+                      hitPct === 1 ? "bg-emerald-500"
+                      : hitPct >= 0.5 ? "bg-yellow-500"
+                      : hitPct > 0 ? "bg-orange-500"
+                      : "bg-zinc-700";
+                    return (
+                      <div key={h.key} className="px-5 py-4 space-y-2">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-sm text-zinc-200">{h.label}</span>
+                          <div className="flex items-center gap-3 shrink-0 text-xs text-zinc-500">
+                            <span>{h.top_performer_count}/{h.count} top</span>
+                            <span className="text-zinc-700">·</span>
+                            <span>avg {h.avg_virality}/10</span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${barColor}`}
+                            style={{ width: `${hitPct * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-zinc-600">
+                          {Math.round(hitPct * 100)}% of posts using this hook type reached top performers
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Beat structures */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Beat structures</h3>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
+                  {aggregateData.beat_structures.map((b) => {
+                    const hitPct = b.count > 0 ? b.top_performer_count / b.count : 0;
+                    const barColor =
+                      hitPct === 1 ? "bg-emerald-500"
+                      : hitPct >= 0.5 ? "bg-yellow-500"
+                      : hitPct > 0 ? "bg-orange-500"
+                      : "bg-zinc-700";
+                    return (
+                      <div key={b.key} className="px-5 py-4 space-y-2">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <span className="text-sm text-zinc-200">{b.label}</span>
+                            <span className="ml-2 text-xs text-zinc-600">[{b.duration_range}]</span>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0 text-xs text-zinc-500">
+                            <span>{b.top_performer_count}/{b.count} top</span>
+                            <span className="text-zinc-700">·</span>
+                            <span>avg {b.avg_virality}/10</span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${barColor}`}
+                            style={{ width: `${hitPct * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Top posts */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Top posts</h3>
+                <div className="space-y-2">
+                  {aggregateData.top_posts.map((p, i) => (
+                    <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs text-zinc-600 font-mono shrink-0">#{i + 1}</span>
+                          <p className="text-sm text-zinc-200 font-medium truncate">{p.title}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {p.virality_score !== null && (
+                            <span className={`text-xs font-mono font-bold ${
+                              p.virality_score >= 8 ? "text-emerald-400"
+                              : p.virality_score >= 6 ? "text-yellow-400"
+                              : "text-red-400"
+                            }`}>
+                              {p.virality_score}/10
+                            </span>
+                          )}
+                          {p.verdict && (
+                            <span className={`text-xs uppercase tracking-wide font-semibold ${
+                              p.verdict === "strong" ? "text-emerald-500"
+                              : p.verdict === "workable" ? "text-yellow-500"
+                              : "text-red-500"
+                            }`}>
+                              {p.verdict}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {p.hook_type && (
+                          <span className="text-xs text-violet-400 border border-violet-800 bg-violet-900/20 rounded px-2 py-0.5">
+                            {p.hook_type.replace(/_/g, " ")}
+                          </span>
+                        )}
+                        {p.beat_structure && (
+                          <span className="text-xs text-zinc-500 border border-zinc-800 rounded px-2 py-0.5">
+                            {p.beat_structure.replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </div>
+                      {p.structural_weak_point && (
+                        <p className="text-xs text-orange-500 border-l-2 border-orange-800 pl-2 leading-relaxed">
+                          {p.structural_weak_point}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
         )}
       </div>
     </div>
