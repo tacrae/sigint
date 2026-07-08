@@ -71,6 +71,12 @@ interface AutopsyRecord {
       verdict?: "strong" | "workable" | "weak";
       hook_cap_triggered?: boolean;
     };
+    structure_classification?: {
+      hook_type?: "contrarian_claim" | "info_gap" | "direct_address" | "cold_open" | "generic_weak";
+      inferred_duration?: string;
+      beat_structure?: "short_form" | "mid_form" | "long_form" | "unclear";
+      structural_weak_point?: string | null;
+    };
   };
 }
 

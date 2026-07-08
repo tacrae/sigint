@@ -5,6 +5,8 @@ import {
   CONTENT_CHECKLIST,
   HOOK_SCORING_RUBRIC,
   HOOK_TYPES,
+  HOOK_TYPE_DEFS,
+  BEAT_STRUCTURE_DEFS,
   PLATFORM_BEHAVIOR,
   PSYCHOLOGICAL_TRIGGERS,
   VIRALITY_FACTORS,
@@ -49,6 +51,14 @@ const checklistText = Object.entries(CONTENT_CHECKLIST)
     ([cat, qs]) =>
       `  ${cat}:\n${qs.map((q) => `    - ${q}`).join("\n")}`
   )
+  .join("\n");
+
+const hookTypeDefsText = Object.entries(HOOK_TYPE_DEFS)
+  .map(([k, v]) => `  ${k}: ${v.description}\n    Signals: ${v.signals.slice(0, 3).join("; ")}`)
+  .join("\n");
+
+const beatStructureDefsText = Object.entries(BEAT_STRUCTURE_DEFS)
+  .map(([k, v]) => `  ${k} [${v.duration_range}]: ${v.label}\n    ${v.description}`)
   .join("\n");
 
 const platformText = Object.entries(PLATFORM_BEHAVIOR)
@@ -148,6 +158,22 @@ Instructions:
 
 ---
 
+SECTION 6 — STRUCTURE CLASSIFICATION
+
+Hook types (pick exactly one):
+${hookTypeDefsText}
+
+Beat structures (matched by inferred video duration):
+${beatStructureDefsText}
+
+Instructions:
+- Assign exactly one hook_type key: contrarian_claim, info_gap, direct_address, cold_open, or generic_weak.
+- Infer video duration from: any "duration" metadata if present; caption complexity (a very short caption with a single-sentence CTA suggests under-15s); or content format cues. State what you inferred.
+- Assign the beat_structure key that matches the inferred duration. Set to "unclear" only if the data is genuinely insufficient.
+- In structural_weak_point, write exactly one sentence naming the specific beat that appears absent or poorly executed. If no clear weak point, set to null.
+
+---
+
 OUTPUT SCHEMA (strict JSON, no prose, no markdown fences):
 
 {
@@ -224,6 +250,12 @@ OUTPUT SCHEMA (strict JSON, no prose, no markdown fences):
     "cta": "string",
     "what_to_keep": "string",
     "what_to_cut": "string"
+  },
+  "structure_classification": {
+    "hook_type": "contrarian_claim | info_gap | direct_address | cold_open | generic_weak",
+    "inferred_duration": "string — e.g. '~20s', 'under 15s', 'unknown'",
+    "beat_structure": "short_form | mid_form | long_form | unclear",
+    "structural_weak_point": "string or null — one sentence naming the specific beat that is absent or weak"
   }
 }`;
 

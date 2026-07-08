@@ -27,6 +27,13 @@ interface ViralityAssessment {
   hook_cap_triggered?: boolean;
 }
 
+interface StructureClassification {
+  hook_type?: "contrarian_claim" | "info_gap" | "direct_address" | "cold_open" | "generic_weak";
+  inferred_duration?: string;
+  beat_structure?: "short_form" | "mid_form" | "long_form" | "unclear";
+  structural_weak_point?: string | null;
+}
+
 interface AutopsyData {
   diagnosis: {
     overall_verdict: string;
@@ -48,6 +55,7 @@ interface AutopsyData {
     what_to_cut: string;
   };
   virality_assessment?: ViralityAssessment;
+  structure_classification?: StructureClassification;
 }
 
 interface ComputedMetrics {
@@ -126,6 +134,21 @@ function AxisRow({ axisKey, axis }: { axisKey: string; axis: AxisScore }) {
   );
 }
 
+const HOOK_TYPE_META: Record<string, { label: string; color: string }> = {
+  contrarian_claim: { label: "Contrarian claim", color: "bg-violet-900/40 border-violet-700 text-violet-300" },
+  info_gap:         { label: "Info gap / unresolved visual", color: "bg-indigo-900/40 border-indigo-700 text-indigo-300" },
+  direct_address:   { label: "Direct address / POV", color: "bg-sky-900/40 border-sky-700 text-sky-300" },
+  cold_open:        { label: "Cold open (pure visual)", color: "bg-teal-900/40 border-teal-700 text-teal-300" },
+  generic_weak:     { label: "Generic / weak", color: "bg-red-900/40 border-red-700 text-red-300" },
+};
+
+const BEAT_STRUCTURE_META: Record<string, { label: string; duration: string }> = {
+  short_form: { label: "Hook → Build → Payoff → Loop", duration: "Under 15s" },
+  mid_form:   { label: "Hook → Context → Escalation → Payoff → CTA", duration: "20-40s" },
+  long_form:  { label: "Hook → Setup → Middle(×3) → Payoff → CTA", duration: "40-60s+" },
+  unclear:    { label: "Unclear", duration: "unknown" },
+};
+
 function DiagRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-b border-zinc-800 pb-4">
@@ -162,7 +185,7 @@ function MetricPill({
 }
 
 export default function AutopsyResults({ result, metrics }: AutopsyResultsProps) {
-  const { diagnosis, what_broke, specific_fixes, next_video_brief, virality_assessment } = result;
+  const { diagnosis, what_broke, specific_fixes, next_video_brief, virality_assessment, structure_classification } = result;
 
   return (
     <div className="space-y-8">
@@ -235,6 +258,38 @@ export default function AutopsyResults({ result, metrics }: AutopsyResultsProps)
                 </p>
                 <p className="text-sm text-zinc-300">{virality_assessment.weakest_axis_fix}</p>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Structure classification */}
+      {structure_classification?.hook_type && (
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Structure</h3>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Hook type pill */}
+              <span className={`text-xs font-semibold border rounded px-3 py-1 ${
+                HOOK_TYPE_META[structure_classification.hook_type]?.color ?? "bg-zinc-800 border-zinc-700 text-zinc-300"
+              }`}>
+                {HOOK_TYPE_META[structure_classification.hook_type]?.label ?? structure_classification.hook_type}
+              </span>
+              {/* Beat structure */}
+              {structure_classification.beat_structure && structure_classification.beat_structure !== "unclear" && (
+                <span className="text-xs text-zinc-500 font-mono">
+                  {BEAT_STRUCTURE_META[structure_classification.beat_structure]?.duration ?? ""}&ensp;·&ensp;
+                  {BEAT_STRUCTURE_META[structure_classification.beat_structure]?.label ?? structure_classification.beat_structure}
+                </span>
+              )}
+              {structure_classification.inferred_duration && (
+                <span className="text-xs text-zinc-700">~{structure_classification.inferred_duration}</span>
+              )}
+            </div>
+            {structure_classification.structural_weak_point && (
+              <p className="text-xs text-orange-400 border-l-2 border-orange-700 pl-3 leading-relaxed">
+                {structure_classification.structural_weak_point}
+              </p>
             )}
           </div>
         </div>

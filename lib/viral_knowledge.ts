@@ -176,6 +176,61 @@ export const VIRALITY_SCORE_AXES: ViralityAxis[] = [
   },
 ];
 
+export const HOOK_TYPE_DEFS: Record<
+  string,
+  { label: string; description: string; signals: string[] }
+> = {
+  contrarian_claim: {
+    label: "Contrarian claim",
+    description: "Opens with a claim that contradicts common belief or practice.",
+    signals: ["you're doing X wrong", "stop doing X", "everyone says X but...", "X doesn't actually work"],
+  },
+  info_gap: {
+    label: "Info gap / unresolved visual",
+    description: "Shows or implies something without immediately explaining it — forces the viewer to stay for the answer.",
+    signals: ["result shown before method", "screenshot or number with no context yet", "visual raises a question before audio resolves it", "incomplete information withheld from the hook"],
+  },
+  direct_address: {
+    label: "Direct address / POV",
+    description: "Speaks directly to the viewer using second-person or POV framing.",
+    signals: ["POV:", "opens with 'you'", "if you...", "this is for you if...", "direct eye contact to lens with second-person spoken line"],
+  },
+  cold_open: {
+    label: "Cold open (pure visual)",
+    description: "Leads with visual action — no text overlay, no spoken hook — common in ASMR, satisfying-process, and transformation content.",
+    signals: ["no on-screen text in first 2s", "no spoken word in first 2s", "action or process starts immediately", "visual rhythm carries the open alone"],
+  },
+  generic_weak: {
+    label: "Generic / weak",
+    description: "States a topic without tension. Would not survive a muted scroll.",
+    signals: ["topic announcement with no hook device", "slow build before any claim", "no emotional trigger in first 3s", "any creator could open the same way"],
+  },
+};
+
+export const BEAT_STRUCTURE_DEFS: Record<
+  string,
+  { label: string; duration_range: string; beats: string[]; description: string }
+> = {
+  short_form: {
+    label: "Hook → Build → Payoff → Loop",
+    duration_range: "Under 15s",
+    beats: ["Hook", "Build", "Payoff", "Loop"],
+    description: "Tight 4-beat structure. Loop means the ending creates a reason to rewatch — the final frame rhymes with the first.",
+  },
+  mid_form: {
+    label: "Hook → Context → Escalation → Payoff → CTA",
+    duration_range: "20-40s",
+    beats: ["Hook", "Context", "Escalation", "Payoff", "CTA"],
+    description: "5-beat structure. Context earns trust after the hook; Escalation raises stakes before the payoff lands.",
+  },
+  long_form: {
+    label: "Hook → Setup → Middle(×3) → Payoff → CTA",
+    duration_range: "40-60s+",
+    beats: ["Hook", "Setup", "Middle 1", "Middle 2", "Middle 3", "Payoff", "CTA"],
+    description: "7-beat structure. Three middle beats deliver value incrementally; a re-hook at the midpoint prevents drop-off.",
+  },
+};
+
 export const VIRALITY_HARD_RULE =
   "If hook_strength score is 3 or below, cap the verdict at 'weak' regardless of the other four scores. A weak hook means most of the audience never sees the rest of the video, so nothing else can rescue the verdict.";
 
