@@ -59,6 +59,18 @@ interface AutopsyRecord {
       what_to_keep: string;
       what_to_cut: string;
     };
+    virality_assessment?: {
+      hook_strength?: { score: number; reasoning: string };
+      retention_design?: { score: number; reasoning: string };
+      shareability?: { score: number; reasoning: string; confidence_note?: string };
+      save_worthiness?: { score: number; reasoning: string; confidence_note?: string };
+      format_fit?: { score: number; reasoning: string };
+      weakest_axis?: string;
+      weakest_axis_fix?: string;
+      weighted_total?: number;
+      verdict?: "strong" | "workable" | "weak";
+      hook_cap_triggered?: boolean;
+    };
   };
 }
 

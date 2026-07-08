@@ -8,6 +8,25 @@ interface Fix {
   fix: string;
 }
 
+interface AxisScore {
+  score: number;
+  reasoning: string;
+  confidence_note?: string;
+}
+
+interface ViralityAssessment {
+  hook_strength?: AxisScore;
+  retention_design?: AxisScore;
+  shareability?: AxisScore;
+  save_worthiness?: AxisScore;
+  format_fit?: AxisScore;
+  weakest_axis?: string;
+  weakest_axis_fix?: string;
+  weighted_total?: number;
+  verdict?: "strong" | "workable" | "weak";
+  hook_cap_triggered?: boolean;
+}
+
 interface AutopsyData {
   diagnosis: {
     overall_verdict: string;
@@ -28,6 +47,7 @@ interface AutopsyData {
     what_to_keep: string;
     what_to_cut: string;
   };
+  virality_assessment?: ViralityAssessment;
 }
 
 interface ComputedMetrics {
@@ -41,6 +61,69 @@ interface ComputedMetrics {
 interface AutopsyResultsProps {
   result: AutopsyData;
   metrics: ComputedMetrics;
+}
+
+const AXIS_LABELS: Record<string, string> = {
+  hook_strength: "Hook strength",
+  retention_design: "Retention design",
+  shareability: "Shareability",
+  save_worthiness: "Save-worthiness",
+  format_fit: "Format-fit",
+};
+
+const AXIS_WEIGHTS: Record<string, string> = {
+  hook_strength: "20%",
+  retention_design: "20%",
+  shareability: "25%",
+  save_worthiness: "25%",
+  format_fit: "10%",
+};
+
+function axisScoreColor(score: number) {
+  if (score >= 8) return "text-emerald-400";
+  if (score >= 6) return "text-yellow-400";
+  if (score >= 4) return "text-orange-400";
+  return "text-red-400";
+}
+
+function axisBarColor(score: number) {
+  if (score >= 8) return "bg-emerald-500";
+  if (score >= 6) return "bg-yellow-500";
+  if (score >= 4) return "bg-orange-500";
+  return "bg-red-500";
+}
+
+function verdictBadge(verdict: string) {
+  if (verdict === "strong")   return "bg-emerald-900/40 border-emerald-700 text-emerald-300";
+  if (verdict === "workable") return "bg-yellow-900/40 border-yellow-700 text-yellow-300";
+  return "bg-red-900/40 border-red-700 text-red-300";
+}
+
+function AxisRow({ axisKey, axis }: { axisKey: string; axis: AxisScore }) {
+  const score = axis.score ?? 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs text-zinc-400 font-medium">{AXIS_LABELS[axisKey] ?? axisKey}</span>
+          <span className="text-xs text-zinc-700">{AXIS_WEIGHTS[axisKey]}</span>
+        </div>
+        <span className={`text-sm font-mono font-bold shrink-0 ${axisScoreColor(score)}`}>
+          {score}/10
+        </span>
+      </div>
+      <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full ${axisBarColor(score)}`}
+          style={{ width: `${(score / 10) * 100}%` }}
+        />
+      </div>
+      <p className="text-xs text-zinc-500 leading-relaxed">{axis.reasoning}</p>
+      {axis.confidence_note && (
+        <p className="text-xs text-zinc-700 italic">{axis.confidence_note}</p>
+      )}
+    </div>
+  );
 }
 
 function DiagRow({ label, value }: { label: string; value: string }) {
@@ -79,7 +162,7 @@ function MetricPill({
 }
 
 export default function AutopsyResults({ result, metrics }: AutopsyResultsProps) {
-  const { diagnosis, what_broke, specific_fixes, next_video_brief } = result;
+  const { diagnosis, what_broke, specific_fixes, next_video_brief, virality_assessment } = result;
 
   return (
     <div className="space-y-8">
@@ -100,6 +183,62 @@ export default function AutopsyResults({ result, metrics }: AutopsyResultsProps)
           <MetricPill label="Hook rate" value={metrics.hookRate} thresholds={{ warn: 50, ok: 70 }} />
         </div>
       </div>
+
+      {/* Virality score */}
+      {virality_assessment && virality_assessment.weighted_total !== undefined && (
+        <div className="space-y-4">
+          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Virality Score</h3>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 space-y-5">
+            {/* Total + verdict */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-mono font-bold text-zinc-100">
+                  {virality_assessment.weighted_total.toFixed(1)}
+                </span>
+                <span className="text-sm text-zinc-500">/ 10</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {virality_assessment.hook_cap_triggered && (
+                  <span className="text-xs text-amber-400 border border-amber-700 bg-amber-900/30 rounded px-2 py-0.5">
+                    hook cap ⚠
+                  </span>
+                )}
+                <span className={`text-xs font-bold uppercase tracking-widest border rounded px-3 py-1 ${verdictBadge(virality_assessment.verdict ?? "weak")}`}>
+                  {virality_assessment.verdict ?? "—"}
+                </span>
+              </div>
+            </div>
+
+            {virality_assessment.hook_cap_triggered && (
+              <p className="text-xs text-amber-500 border border-amber-800 bg-amber-950/30 rounded px-3 py-2">
+                Hook scored ≤ 3 — verdict capped at weak. A hook this weak means most of the audience never sees the rest of the video, so the other scores cannot rescue it.
+              </p>
+            )}
+
+            {/* Per-axis rows */}
+            <div className="space-y-5 pt-1">
+              {(["hook_strength", "retention_design", "shareability", "save_worthiness", "format_fit"] as const).map((key) => {
+                const axis = virality_assessment[key];
+                if (!axis) return null;
+                return <AxisRow key={key} axisKey={key} axis={axis} />;
+              })}
+            </div>
+
+            {/* Weakest axis fix */}
+            {virality_assessment.weakest_axis_fix && (
+              <div className="border-t border-zinc-800 pt-4">
+                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-1.5">
+                  Fix the weakest axis
+                  {virality_assessment.weakest_axis && (
+                    <span className="ml-2 text-orange-400 normal-case">({AXIS_LABELS[virality_assessment.weakest_axis] ?? virality_assessment.weakest_axis})</span>
+                  )}
+                </p>
+                <p className="text-sm text-zinc-300">{virality_assessment.weakest_axis_fix}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Diagnosis breakdown */}
       <div className="space-y-4">

@@ -96,6 +96,89 @@ export const VIRALITY_FACTORS: Record<string, string> = {
     "Content gets shared when it serves the sharer's social goal — to look smart, to help a specific person, to signal identity, or to express something the sharer could not articulate alone. Shareable content is relatable enough to recognize, valuable enough to send, novel enough to be worth surfacing, and identity-affirming enough that sharing it says something the sharer wants said about them.",
 };
 
+export interface ViralityAxis {
+  key: string;
+  label: string;
+  weight: number;
+  description: string;
+  bands: { range: string; label: string; detail: string }[];
+  confidence_note?: string;
+}
+
+export const VIRALITY_SCORE_AXES: ViralityAxis[] = [
+  {
+    key: "hook_strength",
+    label: "Hook strength",
+    weight: 0.20,
+    description:
+      "The opening frame + first line, judged as whether it would survive a muted, fast-scroll test.",
+    bands: [
+      { range: "0-3", label: "weak", detail: "generic opener, slow build, no tension, takes more than one glance to parse" },
+      { range: "4-6", label: "workable", detail: "clear but not surprising, states the topic without tension or a hook device" },
+      { range: "7-8", label: "strong", detail: "specific, tension-carrying, readable in one glance even muted — a contrarian claim, an unresolved visual, or direct address" },
+      { range: "9-10", label: "exceptional", detail: "all of the above, plus the opening frame alone (no text, no audio) would stop a scroll on its own" },
+    ],
+  },
+  {
+    key: "retention_design",
+    label: "Retention design",
+    weight: 0.20,
+    description:
+      "Pacing and structure once the hook has earned the first three seconds.",
+    bands: [
+      { range: "0-3", label: "weak", detail: "scene count mismatched to length, no clear beat structure, trails off instead of resolving" },
+      { range: "4-6", label: "workable", detail: "beat structure present but generic, flat middle, abrupt end" },
+      { range: "7-8", label: "strong", detail: "clear structure matched to length, pacing varies with intent, loop-friendly endings rhyme with the opening frame" },
+      { range: "9-10", label: "exceptional", detail: "all of the above plus a deliberate mid-video re-hook moment" },
+    ],
+  },
+  {
+    key: "shareability",
+    label: "Shareability",
+    weight: 0.25,
+    description:
+      "Does this give someone a reason to send it to one specific person, not a vague 'this is good' reaction.",
+    bands: [
+      { range: "0-3", label: "weak", detail: "no specific send trigger" },
+      { range: "4-6", label: "workable", detail: "broadly relatable but generic" },
+      { range: "7-8", label: "strong", detail: "clear send trigger — names a specific person, relationship, or shared situation, or is useful enough that sending it is a favor" },
+      { range: "9-10", label: "exceptional", detail: "the send trigger is baked into the content itself, not bolted on as a caption instruction" },
+    ],
+    confidence_note:
+      "inferred from caption + on-screen text, not verified against actual send/save data",
+  },
+  {
+    key: "save_worthiness",
+    label: "Save-worthiness",
+    weight: 0.25,
+    description: "Would this still be useful if reopened in a week.",
+    bands: [
+      { range: "0-3", label: "weak", detail: "entertainment only, nothing to reference later" },
+      { range: "4-6", label: "workable", detail: "some reference value delivered too fast or vaguely to use" },
+      { range: "7-8", label: "strong", detail: "a clear reusable technique, number, checklist, or aesthetic reference, held on screen long enough to actually read" },
+      { range: "9-10", label: "exceptional", detail: "structured so someone could act on it without rewatching" },
+    ],
+    confidence_note:
+      "inferred from caption + on-screen text, not verified against actual send/save data",
+  },
+  {
+    key: "format_fit",
+    label: "Format-fit",
+    weight: 0.10,
+    description:
+      "Does the pacing, framing, and audio choice match the format the video is claiming to be.",
+    bands: [
+      { range: "0-3", label: "weak", detail: "pacing, framing, or audio contradict the claimed format — a real fail here degrades the total regardless of other scores" },
+      { range: "4-6", label: "workable", detail: "mostly fits the format with minor inconsistencies" },
+      { range: "7-8", label: "strong", detail: "pacing, framing, and audio all match the claimed format" },
+      { range: "9-10", label: "exceptional", detail: "format choice itself amplifies the content — the medium is part of the message" },
+    ],
+  },
+];
+
+export const VIRALITY_HARD_RULE =
+  "If hook_strength score is 3 or below, cap the verdict at 'weak' regardless of the other four scores. A weak hook means most of the audience never sees the rest of the video, so nothing else can rescue the verdict.";
+
 export const REVENUE_FORMULAS: Record<string, number> = {
   followers_to_views_multiplier: 100,
   views_to_bio_clicks: 0.001,

@@ -8,6 +8,8 @@ import {
   PLATFORM_BEHAVIOR,
   PSYCHOLOGICAL_TRIGGERS,
   VIRALITY_FACTORS,
+  VIRALITY_SCORE_AXES,
+  VIRALITY_HARD_RULE,
 } from "@/lib/viral_knowledge";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -31,6 +33,17 @@ const viralityText = Object.entries(VIRALITY_FACTORS)
   .map(([k, v]) => `  ${k}: ${v}`)
   .join("\n");
 
+const viralityScoreText = VIRALITY_SCORE_AXES.map((axis) => {
+  const bandsText = axis.bands
+    .map((b) => `    ${b.range}: ${b.label} — ${b.detail}`)
+    .join("\n");
+  const weightPct = Math.round(axis.weight * 100);
+  const conf = axis.confidence_note
+    ? `\n  Confidence note (include verbatim in output): "${axis.confidence_note}"`
+    : "";
+  return `${axis.label} (weight ${weightPct}%)\n  ${axis.description}\n${bandsText}${conf}`;
+}).join("\n\n");
+
 const checklistText = Object.entries(CONTENT_CHECKLIST)
   .map(
     ([cat, qs]) =>
@@ -46,6 +59,11 @@ const platformText = Object.entries(PLATFORM_BEHAVIOR)
   .join("\n");
 
 const SYSTEM_PROMPT = `You are SIGINT AUTOPSY — a surgical content diagnostics engine. You do not give encouragement. You give precise scores, exact failure points, and specific fixes. Run all five diagnostic sections in order.
+
+PRE-REVENUE MODE — ACTIVE
+━━━━━━━━━━━━━━━━━━━━━━━━
+This creator has 8 followers, zero sales, and no verified results. When writing next_video_brief.hook, never suggest a hook that implies results, income, viral numbers, or social proof this creator cannot verify. The next hook must come from: curiosity, honest confession, specific process truth, or philosophy. Building-from-zero is the honest position — write from it.
+// POST-REVENUE MODE: remove this block when first verifiable result (sale, 1K+ view reel) exists.
 
 ---
 
@@ -95,14 +113,14 @@ Instructions:
 
 ---
 
-SECTION 3 — VIRALITY FACTOR ASSESSMENT
+SECTION 3 — VIRALITY SCORE
 
-Virality pillars:
-${viralityText}
+Score the video on all five axes below. Each axis: integer or one decimal, 0–10.
+For each axis provide exactly one line of reasoning. Do NOT compute the weighted total — that is calculated server-side.
 
-Instructions:
-- Score each pillar (hook, retention, shareability) 1–10 independently. Do NOT compute the composite — that is calculated server-side.
-- Identify the weakest pillar and give one specific, actionable fix.
+Hard rule: ${VIRALITY_HARD_RULE}
+
+${viralityScoreText}
 
 ---
 
@@ -155,11 +173,13 @@ OUTPUT SCHEMA (strict JSON, no prose, no markdown fences):
     "missing_trigger_suggestions": ["trigger_name: one sentence on how to add it"]
   },
   "virality_assessment": {
-    "hook_pillar_score": 0,
-    "retention_pillar_score": 0,
-    "shareability_pillar_score": 0,
-    "weakest_pillar": "hook | retention | shareability",
-    "weakest_pillar_fix": "string — specific actionable fix"
+    "hook_strength": { "score": 0, "reasoning": "one line" },
+    "retention_design": { "score": 0, "reasoning": "one line" },
+    "shareability": { "score": 0, "reasoning": "one line", "confidence_note": "inferred from caption + on-screen text, not verified against actual send/save data" },
+    "save_worthiness": { "score": 0, "reasoning": "one line", "confidence_note": "inferred from caption + on-screen text, not verified against actual send/save data" },
+    "format_fit": { "score": 0, "reasoning": "one line" },
+    "weakest_axis": "hook_strength | retention_design | shareability | save_worthiness | format_fit",
+    "weakest_axis_fix": "string — specific actionable fix"
   },
   "preflight_checklist": {
     "hook_power": [
@@ -279,10 +299,17 @@ function computeDashboard(
   const triggers = (ts.triggers ?? {}) as Record<string, { detected: boolean }>;
   const triggerDensity = Object.values(triggers).filter((t) => t.detected).length;
 
-  const hookP = (va.hook_pillar_score as number) ?? 0;
-  const retP = (va.retention_pillar_score as number) ?? 0;
-  const shareP = (va.shareability_pillar_score as number) ?? 0;
-  const viralPotential = parseFloat(((hookP + retP + shareP) / 3).toFixed(1));
+  // Support both new nested schema and old flat schema (backward compat)
+  const hookP = (va.hook_strength as { score: number } | undefined)?.score ?? (va.hook_pillar_score as number) ?? 0;
+  const retP = (va.retention_design as { score: number } | undefined)?.score ?? (va.retention_pillar_score as number) ?? 0;
+  const shareP = (va.shareability as { score: number } | undefined)?.score ?? (va.shareability_pillar_score as number) ?? 0;
+  const saveP = (va.save_worthiness as { score: number } | undefined)?.score ?? 0;
+  const formatP = (va.format_fit as { score: number } | undefined)?.score ?? 0;
+  const weightedTotal = (va.weighted_total as number | undefined) ??
+    parseFloat(((hookP + retP + shareP) / 3).toFixed(1));
+  const viralVerdict = (va.verdict as string | undefined) ?? "unknown";
+  const hookCap = (va.hook_cap_triggered as boolean | undefined) ?? false;
+  const viralPotential = weightedTotal;
 
   let passed = 0;
   let total = 0;
@@ -302,7 +329,8 @@ function computeDashboard(
     line,
     `Hook Score:        ${hookSummary}`,
     `Trigger Density:   ${triggerDensity}/7`,
-    `Viral Potential:   ${viralPotential}/10 (hook: ${hookP}, retention: ${retP}, shareability: ${shareP})`,
+    `Virality Score:    ${viralPotential}/10 — ${viralVerdict.toUpperCase()}${hookCap ? " ⚠ hook cap active" : ""}`,
+    `  axes → hook: ${hookP}  retention: ${retP}  share: ${shareP}  save: ${saveP}  format: ${formatP}`,
     `Pre-Flight Score:  ${preflightPct}% (${passed}/${total} checks passed)`,
     `Platform Fit:      ${platformVerdict}`,
     line,
@@ -315,9 +343,13 @@ function computeDashboard(
     hook_summary: hookSummary,
     trigger_density: triggerDensity,
     viral_potential: viralPotential,
+    virality_verdict: viralVerdict,
+    hook_cap_triggered: hookCap,
     hook_pillar_score: hookP,
     retention_pillar_score: retP,
     shareability_pillar_score: shareP,
+    save_worthiness_score: saveP,
+    format_fit_score: formatP,
     preflight_pct: preflightPct,
     preflight_passed: passed,
     preflight_total: total,
@@ -414,6 +446,21 @@ Return only the JSON object. No prose. No markdown fences.`;
         { status: 502 }
       );
     }
+
+    // Compute weighted virality score server-side and attach before dashboard
+    const vaRaw = (result.virality_assessment ?? {}) as Record<string, unknown>;
+    const _hook  = (vaRaw.hook_strength     as { score: number } | undefined)?.score ?? 0;
+    const _ret   = (vaRaw.retention_design  as { score: number } | undefined)?.score ?? 0;
+    const _share = (vaRaw.shareability      as { score: number } | undefined)?.score ?? 0;
+    const _save  = (vaRaw.save_worthiness   as { score: number } | undefined)?.score ?? 0;
+    const _fmt   = (vaRaw.format_fit        as { score: number } | undefined)?.score ?? 0;
+    const _total = parseFloat(
+      (_hook * 0.20 + _ret * 0.20 + _share * 0.25 + _save * 0.25 + _fmt * 0.10).toFixed(1)
+    );
+    const _cap = _hook <= 3;
+    const _verdict: "strong" | "workable" | "weak" =
+      _cap ? "weak" : _total >= 8.0 ? "strong" : _total >= 6.0 ? "workable" : "weak";
+    result.virality_assessment = { ...vaRaw, weighted_total: _total, verdict: _verdict, hook_cap_triggered: _cap };
 
     result.dashboard = computeDashboard(
       result,
