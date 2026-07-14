@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ChatBuddy from "@/components/ChatBuddy";
 
@@ -81,6 +82,15 @@ interface AutopsyRecord {
 }
 
 export default function AutopsyPage() {
+  return (
+    <Suspense>
+      <AutopsyPageInner />
+    </Suspense>
+  );
+}
+
+function AutopsyPageInner() {
+  const searchParams = useSearchParams();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [selectedBrandId, setSelectedBrandId] = useState("");
   const [videoData, setVideoData] = useState<AutopsyVideoData>(emptyVideoData());
@@ -89,6 +99,22 @@ export default function AutopsyPage() {
   const [loading, setLoading] = useState(false);
   const [autopsy, setAutopsy] = useState<AutopsyRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const hook = searchParams.get("hook");
+    const cta = searchParams.get("cta");
+    const caption = searchParams.get("caption");
+    const intent = searchParams.get("intent");
+    if (hook || cta || caption || intent) {
+      setVideoData((prev) => ({
+        ...prev,
+        ...(hook ? { hook } : {}),
+        ...(cta ? { cta } : {}),
+        ...(caption ? { caption } : {}),
+        ...(intent ? { what_i_was_trying_to_do: intent } : {}),
+      }));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetch("/api/brands")

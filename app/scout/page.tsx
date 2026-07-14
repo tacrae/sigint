@@ -416,12 +416,18 @@ export default function ScoutPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-base font-bold text-zinc-100">Recommended Reel Brief</h2>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Link
                     href={`/script?hook=${encodeURIComponent(analysis.recommended_brief.hook)}&cta=${encodeURIComponent(analysis.recommended_brief.cta)}&format=${encodeURIComponent(analysis.recommended_brief.format)}&visual_style=${encodeURIComponent(analysis.recommended_brief.visual_style)}&duration=${analysis.recommended_brief.duration_seconds}&caption_structure=${encodeURIComponent(analysis.recommended_brief.caption_structure)}`}
                     className="inline-flex items-center gap-1.5 bg-violet-900/60 hover:bg-violet-800/60 border border-violet-700 text-violet-300 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
                   >
                     Generate Script →
+                  </Link>
+                  <Link
+                    href={`/autopsy?hook=${encodeURIComponent(analysis.recommended_brief.hook)}&cta=${encodeURIComponent(analysis.recommended_brief.cta)}&caption=${encodeURIComponent(analysis.recommended_brief.caption_structure)}&intent=${encodeURIComponent(analysis.recommended_brief.why_this_works)}`}
+                    className="inline-flex items-center gap-1.5 bg-red-900/60 hover:bg-red-800/60 border border-red-700 text-red-300 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Diagnose in AUTOPSY →
                   </Link>
                   <button
                     onClick={handleOptioHandoff}
